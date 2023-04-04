@@ -1,79 +1,28 @@
-class FIFO {
-    #arr = [];
-
-    isEmpty(){
-        return this.#arr.length==0;
-    }
-    enqueue(el){
-        this.#arr.push(el);
-    }
-    dequeue(){
-        return !this.isEmpty()? this.#arr.shift() : null;
-    }
-
-    front(){
-        return !this.isEmpty()? this.#arr[0] : null;
-    }
-
-    size(){
-        return this.#arr.length;
-    }
-
-}
-
-class LIFO {
-    #arr = [];
-
-    push(el){
-        this.#arr.push(el);
-    }
-    pop(){
-        return this.#arr.length!=0 ? this.#arr.pop() : null;
-    }
-    peek(){
-        return this.#arr.length!=0 ? this.#arr[this.#arr.length - 1] : null;
-    }
-    length(){
-        return this.#arr.length;
-    }
-}
-
-class SinglyLinked {
+class SinglyLinkedList {
     #next = null;
     constructor(value, prev = null) {
         this.value = value;
-        if (prev instanceof SinglyLinked){
+        if (prev instanceof SinglyLinkedList){
             prev.next = this;
         }
     }
 
     set next(next){
-        if (next instanceof SinglyLinked){
-            this.#next = next;
-        }
+        this.#next = next;
     }
 
     get next(){
         return this.#next;
     }
 
-}
-
-class QueueUtil {
-    #firstElem = null;
-    constructor(list = null) {
-        if (list instanceof SinglyLinked){
-            this.#firstElem = list;
-        }
-    }
 
     //--------------BASE----------------
     // length, pop, push, shift, unshift
 
     //Длинна массива
     length() {
-        let elem = this.#firstElem;
-        let count = elem? 1 : 0;
+        let elem = this;
+        let count = (!this.value&&!this.next)? 0 : 1;
         while (elem.next) {
             count++;
             elem = elem.next;
@@ -83,12 +32,12 @@ class QueueUtil {
 
     //Удаление элемента с конца
     pop() {
-        let elem = this.#firstElem;
+        let elem = this;
         let value = null;
-        if (elem) {
+        if (elem.value) {
             if (!elem.next) {
                 value = elem.value;
-                this.#firstElem = null;
+                this.value = null;
                 return value;
             }
             while (elem.next) {
@@ -106,11 +55,11 @@ class QueueUtil {
     //Вставка элемента или нескольких элементов в конец
     push(...listOfValues){
         for (let i of listOfValues) {
-            if (!this.#firstElem) {
-                this.#firstElem = new SinglyLinked(i);
+            if (!this.value && !this.next) {
+                this.value = i;
                 continue;
             }
-            const elem = new SinglyLinked(i, this.lastElement());
+            const elem = new SinglyLinkedList(i, this.lastElement());
         }
 
         return this.length();
@@ -119,9 +68,9 @@ class QueueUtil {
     //Удаление элемента с начала
     shift() {
         let value = null;
-        if (this.#firstElem) {
-            value = this.#firstElem.value;
-            this.#firstElem.next ? this.#firstElem = this.#firstElem.next : this.#firstElem = null;
+        if (this.value || this.next) {
+            value = this.value;
+            this.next ? (this.value = this.next.value, this.next = this.next.next) : this.value = null;
         }
         return value;
     }
@@ -129,7 +78,117 @@ class QueueUtil {
     //Вставка элемента или нескольких элементов в начало
     unshift(...listOfValues){
         for (let i = listOfValues.length-1; i >= 0; i--) {
-            const newElem = new SinglyLinked(listOfValues[i]);
+            const newElem = new SinglyLinkedList(listOfValues[i]);
+            this.setElementToZero(newElem);
+        }
+        return this.length();
+    }
+
+    //-----------------HELP-----------------
+    //Вывод в консоль элементов построчно
+    run (){
+        let elem = this;
+        while (elem) {
+            console.log(`value: ${elem.value}, next element: ${elem.next? elem.next.value : null}`);
+            elem = elem.next;
+        }
+
+        return null;
+    }
+
+    //Возврат последнего элемента в массиве без его удаления
+    lastElement (){
+        let elem = this;
+        while (elem.next) {
+            elem = elem.next;
+        }
+        return elem
+    }
+
+    //Вставка переданного элемента на нулевой индекс
+    setElementToZero(newElem){
+        if (newElem && newElem instanceof SinglyLinkedList){
+            let elem = new SinglyLinkedList(this.value)
+            elem.next = this.next
+
+            this.value = newElem.value
+            this.next = elem
+        }
+    }
+
+}
+
+class QueueUtil {
+    #firstElem = null;
+    constructor(list = null) {
+        if (list instanceof SinglyLinkedList){
+            this.#firstElem = list;
+        }
+    }
+
+    //--------------BASE----------------
+    // length, pop, push, shift, unshift
+
+    // //Длинна массива
+    // length() {
+    //     let elem = this.#firstElem;
+    //     let count = elem? 1 : 0;
+    //     while (elem.next) {
+    //         count++;
+    //         elem = elem.next;
+    //     }
+    //     return count;
+    // }
+
+    // //Удаление элемента с конца
+    // pop() {
+    //     let elem = this.#firstElem;
+    //     let value = null;
+    //     if (elem) {
+    //         if (!elem.next) {
+    //             value = elem.value;
+    //             this.#firstElem = null;
+    //             return value;
+    //         }
+    //         while (elem.next) {
+    //             if (!elem.next.next) {
+    //                 value = elem.next.value;
+    //                 elem.next = null;
+    //                 return value;
+    //             }
+    //             elem = elem.next;
+    //         }
+    //     }
+    //     return value;
+    // }
+
+    // //Вставка элемента или нескольких элементов в конец
+    // push(...listOfValues){
+    //     for (let i of listOfValues) {
+    //         if (!this.#firstElem) {
+    //             this.#firstElem = new SinglyLinkedList(i);
+    //             continue;
+    //         }
+    //         const elem = new SinglyLinkedList(i, this.lastElement());
+    //     }
+    //
+    //     return this.length();
+    // }
+
+    // //Удаление элемента с начала
+    // shift() {
+    //     let value = null;
+    //     if (this.#firstElem) {
+    //         value = this.#firstElem.value;
+    //         this.#firstElem.next ? this.#firstElem = this.#firstElem.next : this.#firstElem = null;
+    //     }
+    //     return value;
+    // }
+
+    //Вставка элемента или нескольких элементов в начало
+    unshift(...listOfValues){
+        for (let i = listOfValues.length-1; i >= 0; i--) {
+            const newElem = new SinglyLinkedList(listOfValues[i]);
             this.setElementToZero(newElem);
         }
 
@@ -142,7 +201,7 @@ class QueueUtil {
 
     //Вставка элемента со значением value на место index
     insert (value, index = 0){
-        const newElem = new SinglyLinked(value);
+        const newElem = new SinglyLinkedList(value);
 
         if(index<0){
             throw new RangeError('Index must be non-negative');
@@ -296,7 +355,7 @@ class QueueUtil {
     concat (...listOfValuesOrQueues) {
         const newQueue = this.clone();
         for (let i of listOfValuesOrQueues) {
-            if (i instanceof QueueUtil || i instanceof SinglyLinked){
+            if (i instanceof QueueUtil || i instanceof SinglyLinkedList){
                 //Использование clone() обеспечивает то, что при передаче нескольких массивов, в них не будут происходить изменения
                 // и работа (те склейка) будет происходить только с их копиями
                 if (!this.#firstElem) {
@@ -364,7 +423,7 @@ class QueueUtil {
 
     //Вставка переданного элемента на нулевой индекс
     setElementToZero(newElem){
-        if (newElem && newElem instanceof SinglyLinked){
+        if (newElem && newElem instanceof SinglyLinkedList){
             let elem = this.#firstElem;
             newElem.next = elem;
             this.#firstElem = newElem;
@@ -384,7 +443,7 @@ class QueueUtil {
     }
 
     set firstElem (elem) {
-        if (elem instanceof SinglyLinked) {
+        if (elem instanceof SinglyLinkedList) {
             this.#firstElem = elem;
         }
 
@@ -392,10 +451,9 @@ class QueueUtil {
     }
 }
 
-const el1 = new SinglyLinked(2);
-const el2 = new SinglyLinked(4, el1);
-const el3 = new SinglyLinked(43, el2);
-const el4 = new SinglyLinked(6, el3);
+const el1 = new SinglyLinkedList(2);
+const el2 = new SinglyLinkedList(4, el1);
+const el3 = new SinglyLinkedList(43, el2);
+const el4 = new SinglyLinkedList(6, el3);
 
-const qu = new QueueUtil(el1);
-console.log(qu.length());
+console.log(el1.length());
