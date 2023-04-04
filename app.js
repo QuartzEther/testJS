@@ -69,6 +69,8 @@ class QueueUtil {
 
     //--------------BASE----------------
     // length, pop, push, shift, unshift
+
+    //Длинна массива
     length() {
         let elem = this.#firstElem;
         let count = elem? 1 : 0;
@@ -79,6 +81,7 @@ class QueueUtil {
         return count;
     }
 
+    //Удаление элемента с конца
     pop() {
         let elem = this.#firstElem;
         let value = null;
@@ -100,6 +103,7 @@ class QueueUtil {
         return value;
     }
 
+    //Вставка элемента или нескольких элементов в конец
     push(...listOfValues){
         for (let i of listOfValues) {
             if (!this.#firstElem) {
@@ -112,6 +116,7 @@ class QueueUtil {
         return this.length();
     }
 
+    //Удаление элемента с начала
     shift() {
         let value = null;
         if (this.#firstElem) {
@@ -121,6 +126,7 @@ class QueueUtil {
         return value;
     }
 
+    //Вставка элемента или нескольких элементов в начало
     unshift(...listOfValues){
         for (let i = listOfValues.length-1; i >= 0; i--) {
             const newElem = new SinglyLinked(listOfValues[i]);
@@ -134,6 +140,7 @@ class QueueUtil {
     //-------------INSIDE---------------
     // insert, remove (index or node)
 
+    //Вставка элемента со значением value на место index
     insert (value, index = 0){
         const newElem = new SinglyLinked(value);
 
@@ -143,12 +150,11 @@ class QueueUtil {
             this.setElementToZero(newElem);
         }else{
             let elem = this.#firstElem
-            index>=this.length() ? index = this.length() : {};
+            if (index>=this.length()) index = this.length();
             for (let i = 0; i<index; i++){
+                //index-1 это проходка ровно до того элемента после которого нужно вставить новый
                 if( i == index-1){
-                    const next = elem.next;
-                    elem.next = newElem;
-                    newElem.next = next;
+                    this.insertAfter(elem, newElem);
                 }
                 elem = elem.next;
             }
@@ -157,6 +163,7 @@ class QueueUtil {
         return this.length();
     }
 
+    //Удаление элемента по index
     removeByIndex(index) {
         let value = null;
 
@@ -167,6 +174,7 @@ class QueueUtil {
         }else if(index<this.length()){
             let elem = this.#firstElem;
             for (let i = 0; i<index; i++){
+                //index-1 это проходка ровно до того элемента который идет перед элементом который нужно удалить
                 if( i == index-1){
                     value = elem.next.value;
                     elem.next = elem.next.next;
@@ -179,6 +187,7 @@ class QueueUtil {
         return value
     }
 
+    //Удаление элемента по значению
     removeByNode(node) {
         let index = null;
         let elem = this.#firstElem;
@@ -203,6 +212,7 @@ class QueueUtil {
     //-------------ORDER---------------
     // reverse, clone, Insertion & Bubble sort
 
+    //Изменение порядка элементов на противоположный
     reverse(){
         const newQueue = new QueueUtil();
         const len = this.length();
@@ -215,6 +225,7 @@ class QueueUtil {
         return null
     }
 
+    //Клонирование массива
     clone(){
         const newQueue = new QueueUtil();
         let elem = this.#firstElem;
@@ -227,6 +238,7 @@ class QueueUtil {
         return newQueue;
     }
 
+    //Сортировка вставками
     insertionSort(){
         if (this.length() > 1){
             let lastElem = this.#firstElem.next;
@@ -248,6 +260,7 @@ class QueueUtil {
         return null;
     }
 
+    //Сортировка пузырьком
     bubbleSort(){
         if (this.length() > 1){
 
@@ -278,10 +291,14 @@ class QueueUtil {
 
     //-------------TAKE A PART---------------
     //concat, split
+
+    //Склейка нескольких массивов или элементов
     concat (...listOfValuesOrQueues) {
         const newQueue = this.clone();
         for (let i of listOfValuesOrQueues) {
             if (i instanceof QueueUtil || i instanceof SinglyLinked){
+                //Использование clone() обеспечивает то, что при передаче нескольких массивов, в них не будут происходить изменения
+                // и работа (те склейка) будет происходить только с их копиями
                 if (!this.#firstElem) {
                     newQueue.firstElem = i instanceof QueueUtil ? i.clone().firstElem : new QueueUtil(i).clone().firstElem;
                     continue;
@@ -292,6 +309,7 @@ class QueueUtil {
         return newQueue;
     }
 
+    //Обрезка до index
     split (index = this.length()){
         let newQueue = new QueueUtil();
         let elem = this.#firstElem;
@@ -312,6 +330,8 @@ class QueueUtil {
 
 
     //---------HELP FOR ME--------------
+
+    //Вывод в консоль элементов построчно
     run (){
         let elem = this.#firstElem;
         while (elem) {
@@ -322,6 +342,7 @@ class QueueUtil {
         return null;
     }
 
+    //Вывод в консоль элементов в виде object
     print (){
         let elem = this.#firstElem;
         while (elem) {
@@ -332,6 +353,7 @@ class QueueUtil {
         return null;
     }
 
+    //Возврат последнего элемента в массиве без его удаления
     lastElement (){
         let elem = this.#firstElem;
         while (elem.next) {
@@ -340,6 +362,7 @@ class QueueUtil {
         return elem
     }
 
+    //Вставка переданного элемента на нулевой индекс
     setElementToZero(newElem){
         if (newElem && newElem instanceof SinglyLinked){
             let elem = this.#firstElem;
@@ -348,6 +371,14 @@ class QueueUtil {
         }
     }
 
+    //Вставка значения после определенного элемента
+    insertAfter(elem, newElem){
+        const next = elem.next;
+        elem.next = newElem;
+        newElem.next = next;
+    }
+
+    //get и set для поля firstElem
     get firstElem () {
         return this.#firstElem;
     }
