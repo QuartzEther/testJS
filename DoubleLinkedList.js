@@ -1,21 +1,36 @@
-class SinglyLinkedList {
+class DoubleLinkedList {
     #next = null;
+    #prev = null;
 
-    constructor(value, prev = null) {
+    constructor(value, prev = null, next = null) {
         this.value = value;
-        if (prev instanceof SinglyLinkedList) {
+        if (prev instanceof DoubleLinkedList) {
             prev.next = this;
+            this.prev = prev;
+        }
+        if (next instanceof DoubleLinkedList) {
+            next.prev = this;
+            this.next = next;
+
         }
     }
 
     set next(next) {
         this.#next = next;
+        if (next instanceof DoubleLinkedList) next.prev = this;
     }
 
     get next() {
         return this.#next;
     }
 
+    set prev(prev) {
+        this.#prev = prev;
+    }
+
+    get prev() {
+        return this.#prev;
+    }
 
     //--------------BASE----------------
     // length, pop, push, shift, unshift
@@ -33,24 +48,7 @@ class SinglyLinkedList {
 
     //Удаление элемента с конца
     pop() {
-        let elem = this;
-        let value = null;
-        if (elem.value) {
-            if (!elem.next) {
-                value = elem.value;
-                this.value = null;
-                return value;
-            }
-            while (elem.next) {
-                if (!elem.next.next) {
-                    value = elem.next.value;
-                    elem.next = null;
-                    return value;
-                }
-                elem = elem.next;
-            }
-        }
-        return value;
+        return this.cut(this.lastElement());
     }
 
     //Вставка элемента или нескольких элементов в конец
@@ -60,26 +58,20 @@ class SinglyLinkedList {
                 this.value = i;
                 continue;
             }
-            const elem = new SinglyLinkedList(i, this.lastElement());
+            const elem = new DoubleLinkedList(i, this.lastElement());
         }
-
         return this.length();
     }
 
     //Удаление элемента с начала
     shift() {
-        let value = null;
-        if (this.value || this.next) {
-            value = this.value;
-            this.next ? (this.value = this.next.value, this.next = this.next.next) : this.value = null;
-        }
-        return value;
+        return this.cut(this);
     }
 
     //Вставка элемента или нескольких элементов в начало
     unshift(...listOfValues) {
         for (let i = listOfValues.length - 1; i >= 0; i--) {
-            const newElem = new SinglyLinkedList(listOfValues[i]);
+            const newElem = new DoubleLinkedList(listOfValues[i]);
             this.setElementToZero(newElem);
         }
         return this.length();
@@ -90,7 +82,7 @@ class SinglyLinkedList {
 
     //Вставка элемента со значением value на место index
     insert(value, index = 0) {
-        const newElem = new SinglyLinkedList(value);
+        const newElem = new DoubleLinkedList(value);
 
         if (index < 0) {
             throw new RangeError('Index must be non-negative');
@@ -114,24 +106,17 @@ class SinglyLinkedList {
     //Удаление элемента по index
     removeByIndex(index) {
         let value = null;
-
         if (index < 0) {
             throw new RangeError('Index must be non-negative');
-        } else if (index == 0) {
-            value = this.shift();
-        } else if (index < this.length()) {
+        } else if (index<=this.length()) {
             let elem = this;
-            for (let i = 0; i < index; i++) {
-                //index-1 это проходка ровно до того элемента который идет перед элементом который нужно удалить
-                if (i == index - 1) {
-                    value = elem.next.value;
-                    elem.next = elem.next.next;
-                    break;
-                }
+            let i = 0;
+            while (i < index) {
                 elem = elem.next;
+                i++;
             }
+            value = this.cut(elem)
         }
-
         return value
     }
 
@@ -140,18 +125,13 @@ class SinglyLinkedList {
         let index = null;
         let elem = this;
 
-        if (elem && elem.value == node) {
-            this.shift();
-            index = 0;
-        } else {
-            for (let i = 0; i < this.length() - 1; i++) {
-                if (elem.next.value == node) {
-                    index = i + 1;
-                    elem.next = elem.next.next;
-                    break;
-                }
-                elem = elem.next;
+        for (let i = 0; i < this.length(); i++) {
+            if (elem.value == node){
+                this.cut(elem);
+                index = i;
+                break;
             }
+            elem = elem.next;
         }
 
         return index;
@@ -162,7 +142,7 @@ class SinglyLinkedList {
 
     //Изменение порядка элементов на противоположный
     reverse() {
-        const newQueue = new SinglyLinkedList(null);
+        const newQueue = new DoubleLinkedList(null);
         const len = this.length();
 
         for (let i = 0; i < len; i++) {
@@ -170,16 +150,15 @@ class SinglyLinkedList {
         }
 
         this.value = newQueue.value;
-        this.next = newQueue.next
+        this.next = newQueue.next;
 
-        return null
+        return null;
     }
 
 
     //Клонирование массива
     clone() {
-        const newQueue = new SinglyLinkedList(null);
-
+        const newQueue = new DoubleLinkedList(null);
         let elem = this;
 
         for (let i = 0; i < this.length(); i++) {
@@ -198,8 +177,9 @@ class SinglyLinkedList {
 
             for (let i = 1; i < this.length(); i++) {
                 let sortElem = this;
+
                 for (let j = 0; j < i; j++) {
-                    if (lastElem.value <= sortElem.value) {
+                    if (lastElem.value < sortElem.value) {
                         this.insert(this.removeByIndex(i), j);
                         break;
                     }
@@ -207,36 +187,31 @@ class SinglyLinkedList {
                 }
                 lastElem = lastElem.next;
             }
-
         }
-
         return null;
     }
 
     //Сортировка пузырьком
     bubbleSort() {
-        if (this.length() > 1) {
+        let isSort = true;
+        let counter = this.length()-1;
+        while (isSort && counter){
+            isSort = false;
+            let elem = this;
+            for (let i = 0; i < counter; i++) {
+                if (elem.value > elem.next.value) {
+                    let tempValue = elem.value;
+                    elem.value = elem.next.value;
+                    elem.next.value = tempValue;
 
-            for (let i = 0; i < this.length() - 1; i++) {
-                let elem = this;
-                let isSort = false;
-
-                for (let j = 0; j < this.length() - 1 - i; j++) {
-                    if (elem.value > elem.next.value) {
-                        let tempValue = elem.value;
-                        elem.value = elem.next.value;
-                        elem.next.value = tempValue;
-
-                        if (!isSort) isSort = true;
-                    }
-                    elem = elem.next;
+                    if (!isSort) isSort = true;
                 }
-
-                if (!isSort) break;
-
-                //this.run()
-                //console.log("================================")
+                elem = elem.next;
             }
+            counter--;
+
+            // this.run()
+            // console.log("================================")
         }
 
         return null;
@@ -252,29 +227,26 @@ class SinglyLinkedList {
             //Использование clone() обеспечивает то, что при передаче нескольких массивов, в них не будут происходить изменения
             // и работа (те склейка) будет происходить только с их копиями
             if (!this.value && !this.next) {
-                newQueue.value = i instanceof SinglyLinkedList ? (i.value, newQueue.next = i.clone().next) : i;
+                newQueue.value = i instanceof DoubleLinkedList ? (i.value, newQueue.next = i.clone().next) : i;
                 continue;
             }
-            newQueue.lastElement().next = i instanceof SinglyLinkedList ? i.clone() : new SinglyLinkedList(i);
+            newQueue.lastElement().next = i instanceof DoubleLinkedList ? i.clone() : new DoubleLinkedList(i);
         }
         return newQueue;
     }
 
     //Обрезка до index
     split(index = this.length()) {
-        let newQueue = new SinglyLinkedList(null);
-        let elem = this;
+
+        let newQueue = this.clone();
 
         if (index < 0) {
             throw new RangeError('Index must be non-negative');
-        } else if (index >= this.length()) {
-            newQueue = this.clone();
-        } else {
-            for (let i = 0; i < index; i++) {
-                newQueue.push(elem.value);
-                elem = elem.next;
-            }
         }
+        while (newQueue.length()>index) {
+            newQueue.pop();
+        }
+
         return newQueue;
     }
 
@@ -284,7 +256,7 @@ class SinglyLinkedList {
     run() {
         let elem = this;
         while (elem) {
-            console.log(`value: ${elem.value}, next element: ${elem.next ? elem.next.value : null}`);
+            console.log(`prev element: ${elem.prev ? elem.prev.value : null}, value: ${elem.value}, next element: ${elem.next ? elem.next.value : null}`);
             elem = elem.next;
         }
 
@@ -302,8 +274,8 @@ class SinglyLinkedList {
 
     //Вставка переданного элемента на нулевой индекс
     setElementToZero(newElem) {
-        if (newElem && newElem instanceof SinglyLinkedList) {
-            let elem = new SinglyLinkedList(this.value)
+        if (newElem && newElem instanceof DoubleLinkedList) {
+            let elem = new DoubleLinkedList(this.value)
             elem.next = this.next
 
             this.value = newElem.value
@@ -318,12 +290,36 @@ class SinglyLinkedList {
         newElem.next = next;
     }
 
+    //Вырезка элемента из цепочки
+    cut(elem){
+        let value = null;
+
+        if (elem && elem instanceof DoubleLinkedList){
+            value = elem.value;
+
+            if(elem.prev && elem.next){
+                elem.prev.next = elem.next
+            }
+            else if (!elem.next && elem.prev){
+                elem.prev.next = null;
+            }
+            else if (!elem.prev && elem.next){
+                elem.value = elem.next.value;
+                elem.next = elem.next.next;
+                elem.prev = null;
+            }else {
+                elem.value = null
+            }
+        }
+
+        return value;
+    }
 
 }
 
-const el1 = new SinglyLinkedList(2);
-const el2 = new SinglyLinkedList(4, el1);
-const el3 = new SinglyLinkedList(43, el2);
-const el4 = new SinglyLinkedList(6, el3);
+const el1 = new DoubleLinkedList(2);
+const el2 = new DoubleLinkedList(4, el1);
+const el3 = new DoubleLinkedList(43, el2);
+const el4 = new DoubleLinkedList(6, el3);
 
 console.log(el1.length());
